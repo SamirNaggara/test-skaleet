@@ -10,8 +10,24 @@ export class PayByCardCommandHandler  {
 ) {}
 
     public handle(command: PayByCardCommand) {
-        /*
-        À vous de jouer !
-         */
+		
+		const { clientAccountNumber, merchantAccountNumber, amount,	currency } = command.details
+
+		if (amount <= 0) {
+			throw new Error("Le montant fourni en entrée est strictement positif")
+		}
+
+		const clientAccount = this.accountRepository.loadByNumber(clientAccountNumber)
+
+		if (!clientAccount)
+		{
+			throw new Error("Client account not found")
+		}
+		if (clientAccount.balance.currency !== currency)
+		{
+			throw new Error("Current not corresponding to client currency")
+		}
+
+
     }
 }

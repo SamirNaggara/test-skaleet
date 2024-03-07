@@ -6,6 +6,7 @@ import {TransactionRepository} from "../../../Domain/Gateway/Transaction.reposit
 import {AccountRepository} from "../../../Domain/Gateway/Account.repository";
 import {TransactionLog} from "../../../Domain/Model/TransactionLog";
 import {AccountEntry} from "../../../Domain/Model/AccountEntry";
+import {PayByCardCommand} from "./PayByCard.command";
 
 describe('Exercice #1', () => {
     const BANK_EUR = '847596';
@@ -48,7 +49,75 @@ describe('Exercice #1', () => {
         payByCardCommandHandler = new PayByCardCommandHandler(database as TransactionRepository, database as AccountRepository);
     });
 
-    describe('test me', () => {
-        expect(null).toBeNull();
+    describe('transaction', () => {
+
+		it('given handle with positive number, make transation', () => {
+			// arrange
+			const command = new PayByCardCommand({
+				clientAccountNumber   : CLIENT_EUR,
+				merchantAccountNumber : MERCHANT_EUR,
+				amount                : 50,
+				currency              : 'EUR'
+			})
+
+
+			// act
+			payByCardCommandHandler.handle(command)
+			// assert
+			expect(true).toBe(true);
+		});
+
+		it('given handle with negative number, throw exception', () => {
+			// arrange
+			const command = new PayByCardCommand({
+				clientAccountNumber   : CLIENT_EUR,
+				merchantAccountNumber : MERCHANT_EUR,
+				amount                : -50,
+				currency              : 'EUR'
+			})
+
+			try{
+				// act 
+				payByCardCommandHandler.handle(command)
+				// assert
+				expect(false).toBe(true);
+
+			}
+			catch (e)
+			{
+				// assert
+				expect(e.message).toBe("Le montant fourni en entrée est strictement positif");
+				
+			}
+		});
+
+
+		
+
+		it('given currency different than client, throw exception', () => {
+			// arrange
+			const command = new PayByCardCommand({
+				clientAccountNumber   : CLIENT_EUR,
+				merchantAccountNumber : MERCHANT_USD,
+				amount                : 50,
+				currency              : 'USD'
+			})
+
+			try{
+				// act 
+				payByCardCommandHandler.handle(command)
+				// assert
+				expect(false).toBe(true);
+
+			}
+			catch (e)
+			{
+				// assert
+				expect(e.message).toBe("Current not corresponding to client currency");
+			}
+		});
+
+		
+
     });
 });
