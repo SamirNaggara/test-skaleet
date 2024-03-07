@@ -51,7 +51,7 @@ describe('Exercice #1', () => {
 
     describe('transaction', () => {
 
-		it('given handle with positive number, make transation', () => {
+		it('normal case, no error throw', () => {
 			// arrange
 			const command = new PayByCardCommand({
 				clientAccountNumber   : CLIENT_EUR,
@@ -59,14 +59,55 @@ describe('Exercice #1', () => {
 				amount                : 50,
 				currency              : 'EUR'
 			})
-
-
 			// act
 			payByCardCommandHandler.handle(command)
 			// assert
 			expect(true).toBe(true);
 		});
 
+		it('client account decrease', () => {
+			// arrange
+			const command = new PayByCardCommand({
+				clientAccountNumber   : CLIENT_EUR,
+				merchantAccountNumber : MERCHANT_EUR,
+				amount                : 50,
+				currency              : 'EUR'
+			})
+			const balanceBefore = (database as AccountRepository).loadByNumber(CLIENT_EUR).balance.value 
+			payByCardCommandHandler.handle(command)
+			const balanceAfter = (database as AccountRepository).loadByNumber(CLIENT_EUR).balance.value 
+
+			// act
+			// assert
+
+
+			expect(balanceAfter - balanceBefore).toBe(-50);
+		});
+
+		it('merchant account increase', () => {
+			// arrange
+			const command = new PayByCardCommand({
+				clientAccountNumber   : CLIENT_EUR,
+				merchantAccountNumber : MERCHANT_EUR,
+				amount                : 50,
+				currency              : 'EUR'
+			})
+			const balanceBefore = (database as AccountRepository).loadByNumber(MERCHANT_EUR).balance.value 
+			payByCardCommandHandler.handle(command)
+			const balanceAfter = (database as AccountRepository).loadByNumber(MERCHANT_EUR).balance.value 
+
+			// act
+			// assert
+
+
+			expect(balanceAfter - balanceBefore).toBe(50);
+		});
+		
+
+		
+    });
+
+	describe('Check valid amount and currency', () => {
 		it('given handle with negative number, throw exception', () => {
 			// arrange
 			const command = new PayByCardCommand({
@@ -86,15 +127,14 @@ describe('Exercice #1', () => {
 			catch (e)
 			{
 				// assert
-				expect(e.message).toBe("Le montant fourni en entrée est strictement positif");
-				
+				expect(e.message).toBe("negative amount");
 			}
 		});
 
 
 		
 
-		it('given currency different than client, throw exception', () => {
+		it('currency different than client, throw exception', () => {
 			// arrange
 			const command = new PayByCardCommand({
 				clientAccountNumber   : CLIENT_EUR,
@@ -113,11 +153,31 @@ describe('Exercice #1', () => {
 			catch (e)
 			{
 				// assert
-				expect(e.message).toBe("Current not corresponding to client currency");
+				expect(e.message).toBe("Currency not matching");
 			}
 		});
 
-		
+		it('currency different than merchant, throw exception', () => {
+			// arrange
+			const command = new PayByCardCommand({
+				clientAccountNumber   : CLIENT_USD,
+				merchantAccountNumber : MERCHANT_EUR,
+				amount                : 50,
+				currency              : 'USD'
+			})
 
-    });
+			try{
+				// act 
+				payByCardCommandHandler.handle(command)
+				// assert
+				expect(false).toBe(true);
+
+			}
+			catch (e)
+			{
+				// assert
+				expect(e.message).toBe("Currency not matching");
+			}
+		});
+	})
 });

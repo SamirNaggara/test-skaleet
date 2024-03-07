@@ -3,31 +3,36 @@ import {TransactionRepository} from "../../../Domain/Gateway/Transaction.reposit
 import {AccountRepository} from "../../../Domain/Gateway/Account.repository";
 import {InMemoryDataBase} from "../../../Infrastructure/Gateway/InMemoryDataBase";
 
+function assert(condition: any, msg: string): asserts condition {
+    if (!condition) {throw new Error(msg)}
+}
+
 export class PayByCardCommandHandler  {
     constructor(
         private readonly transactionRepository: TransactionRepository,
         private readonly accountRepository: AccountRepository,
 ) {}
-
     public handle(command: PayByCardCommand) {
 		
 		const { clientAccountNumber, merchantAccountNumber, amount,	currency } = command.details
 
-		if (amount <= 0) {
-			throw new Error("Le montant fourni en entrée est strictement positif")
-		}
+		// check that amount is positive
+		assert(amount > 0, "negative amount")
 
+		// load accounts
 		const clientAccount = this.accountRepository.loadByNumber(clientAccountNumber)
+		const merchantAccount = this.accountRepository.loadByNumber(merchantAccountNumber)
 
-		if (!clientAccount)
-		{
-			throw new Error("Client account not found")
-		}
-		if (clientAccount.balance.currency !== currency)
-		{
-			throw new Error("Current not corresponding to client currency")
-		}
+		// check account does exist
+		assert(clientAccount, "Client account not found")
+		assert(merchantAccount, "Merchant account not found")
 
+		// check that currency are matching
+		assert(clientAccount.balance.currency === currency, "Currency not matching")
+		assert(merchantAccount.balance.currency === currency, "Currency not matching")
 
+		// Decrease the amont of the client account
+		clientAccount.balance.value -= amount
+		merchantAccount.balance.value += amount
     }
 }
