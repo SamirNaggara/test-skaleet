@@ -65,7 +65,7 @@ describe('Exercice #1', () => {
 			expect(true).toBe(true);
 		});
 
-		it('client account decrease', () => {
+		it('normal case, client account decrease', () => {
 			// arrange
 			const command = new PayByCardCommand({
 				clientAccountNumber   : CLIENT_EUR,
@@ -73,18 +73,17 @@ describe('Exercice #1', () => {
 				amount                : 50,
 				currency              : 'EUR'
 			})
+
+			// act
 			const balanceBefore = (database as AccountRepository).loadByNumber(CLIENT_EUR).balance.value 
 			payByCardCommandHandler.handle(command)
 			const balanceAfter = (database as AccountRepository).loadByNumber(CLIENT_EUR).balance.value 
 
-			// act
 			// assert
-
-
 			expect(balanceAfter - balanceBefore).toBe(-50);
 		});
 
-		it('merchant account increase', () => {
+		it('normal case, merchant account increase', () => {
 			// arrange
 			const command = new PayByCardCommand({
 				clientAccountNumber   : CLIENT_EUR,
@@ -92,16 +91,58 @@ describe('Exercice #1', () => {
 				amount                : 50,
 				currency              : 'EUR'
 			})
+			
+			// act
 			const balanceBefore = (database as AccountRepository).loadByNumber(MERCHANT_EUR).balance.value 
 			payByCardCommandHandler.handle(command)
 			const balanceAfter = (database as AccountRepository).loadByNumber(MERCHANT_EUR).balance.value 
 
-			// act
 			// assert
-
-
 			expect(balanceAfter - balanceBefore).toBe(50);
 		});
+
+		it('normal case, transaction log id is correct', () => {
+			// arrange
+			const command = new PayByCardCommand({
+				clientAccountNumber   : CLIENT_EUR,
+				merchantAccountNumber : MERCHANT_EUR,
+				amount                : 50,
+				currency              : 'EUR'
+			})
+			
+			// act
+			payByCardCommandHandler.handle(command)
+
+			const lastTransaction = Array.from(database.getTransactions().values()).pop()
+			// assert
+			expect(lastTransaction.id).toBe("transaction");
+		});
+
+		it('normal case, transaction log id, amount and balance are correct', () => {
+			// arrange
+			const command = new PayByCardCommand({
+				clientAccountNumber   : CLIENT_EUR,
+				merchantAccountNumber : MERCHANT_EUR,
+				amount                : 50,
+				currency              : 'EUR'
+			})
+			
+			// act
+			payByCardCommandHandler.handle(command)
+
+			const lastTransaction = Array.from(database.getTransactions().values()).pop()
+			// assert
+			expect(lastTransaction.id).toBe("transaction");
+			expect(lastTransaction.accounting[0].amount.value).toBe(-50);
+			expect(lastTransaction.accounting[0].accountNumber).toBe(CLIENT_EUR);
+			expect(lastTransaction.accounting[0].newBalance.value).toBe(149_50);
+
+			expect(lastTransaction.accounting[1].accountNumber).toBe(MERCHANT_EUR);
+			expect(lastTransaction.accounting[1].amount.value).toBe(50);
+			expect(lastTransaction.accounting[1].newBalance.value).toBe(2000_50);
+
+		});
+
 		
 
 		
